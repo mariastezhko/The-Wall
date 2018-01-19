@@ -1,0 +1,16 @@
+<html>
+<head>
+  <title>Emails</title>
+
+</head>
+<body>
+
+  {% with messages = get_flashed_messages() %}
+    {% if messages %}
+      {% for message in messages %}
+        <p>{{message}}</p>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <h2>Success!</h2>
