@@ -5,6 +5,10 @@
 </head>
 <body>
 
+  <form action='/log_off' method='post'>
+  <button type="submit" value="Log Off">Log Off</button>
+  </form>
+
   {% with messages = get_flashed_messages() %}
     {% if messages %}
       {% for message in messages %}
@@ -13,4 +17,18 @@
     {% endif %}
   {% endwith %}
 
-  <h2>Success!</h2>
+  <h3>Post a message</h3>
+
+  <form action='/wall' method='post'>
+  <textarea name="message" rows="4" cols="100"></textarea>
+  <input type="submit" value="Post a message">
+  </form>
+
+  {% for message in messages: %}
+    <p>{{ message['name'] }}{{ message['date_posted'] }}</p>
+    <p>{{ message['message'] }}
+  {% endfor %}
+
+
+</body>
+</html>

@@ -5,7 +5,7 @@ import re, md5
 app = Flask(__name__)
 app.secret_key = 'KeepItSecretKeepItSafe'
 
-mysql = MySQLConnector(app,'mydb')
+mysql = MySQLConnector(app,'forum')
 
 EMAIL_REGEX = re.compile(r'^[a-zA-Z0-9.+_-]+@[a-zA-Z0-9._-]+\.[a-zA-Z]+$')
 
@@ -13,11 +13,8 @@ EMAIL_REGEX = re.compile(r'^[a-zA-Z0-9.+_-]+@[a-zA-Z0-9._-]+\.[a-zA-Z]+$')
 def index():
     errors = False
     if request.method == 'POST':
-
         form = request.form['purpose']
-
         if form == 'register':
-
                 first_name = request.form['first_name']
                 last_name = request.form['last_name']
                 email = request.form['email']
@@ -27,24 +24,18 @@ def index():
                 if (len(first_name) < 1) or (len(last_name) < 1) or (len(email) < 1) or (len(password) < 1) or (len(conf_password) < 1):
                     flash('All fields are required', 'error')
                     errors = True
-                    #flash("Success! Your name is {}".format(request.form['name']))
-                #elif not (first_name.isalpha() and last_name.isalpha()):
                 if not (first_name.isalpha() and last_name.isalpha()):
                         flash('First and Last Name cannot contain any numbers', 'error')
                         errors = True
-                #elif not EMAIL_REGEX.match(email):
                 if not EMAIL_REGEX.match(email):
                         flash("Email must be valid")
                         errors = True
-                #elif len(password) <= 8:
                 if len(password) <= 8:
                         flash('Password must be more than 8 characters', 'error')
                         errors = True
-                #elif password != conf_password:
                 if password != conf_password:
                         flash("Password doesn't match!", 'error')
                         errors = True
-                #else:
 
                 if errors == False:
                      # check if user exists
@@ -62,7 +53,7 @@ def index():
                          }
                         mysql.query_db(insert_query, data)
                         flash("Registration completed!")
-                        return redirect('/success')
+                        return redirect('/wall')
                      else:
                         flash("User already exists!")
                         return redirect('/')
@@ -85,13 +76,36 @@ def index():
                     else:
                         flash("You have successfully logged in!")
                         session['user_id'] = found[0]['id']
-                        return redirect('/success')
+                        return redirect('/wall')
     else:
         return render_template('index.html')
 
-@app.route('/success')
-def success():    
-    return render_template('success.html')
+@app.route('/wall', methods=['POST', 'GET'])
+def wall():
+    if request.method == 'POST':
+        message = request.form['message']
+        insert_query = "INSERT INTO messages (user_id, message, created_at, updated_at) VALUES (:user_id, :message, NOW(), NOW())"
+        data = {
+         'user_id': session['user_id'],
+         'message': message
+         }
+        mysql.query_db(insert_query, data)
+        return redirect('/wall')
+    else:
+        if 'user_id' in session:
+            select_query = "SELECT CONCAT(users.first_name, users.last_name) AS name, messages.created_at AS date_posted, messages.message AS message FROM users JOIN messages WHERE users.id = messages.user_id"
+            messages = mysql.query_db(select_query)
+            return render_template('wall.html', messages=messages)
+        else:
+            return redirect('/')
+#flash("Success! Your name is {}".format(request.form['name']))
+
+@app.route('/log_off', methods=['POST'])
+def logOff():
+    session['user_id'] = None
+    return redirect('/')
+
+
 
 
 
