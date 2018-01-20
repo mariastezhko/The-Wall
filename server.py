@@ -62,7 +62,7 @@ def index():
         else:
                 email = request.form['email']
                 password = md5.new(request.form['password']).hexdigest()
-                select_query = "SELECT id, email, password FROM users WHERE email = :specific_email LIMIT 1"
+                select_query = "SELECT id, first_name AS name, email, password FROM users WHERE email = :specific_email LIMIT 1"
                 data = {'specific_email': email}
                 found = mysql.query_db(select_query, data)
                 print ("***found", found)
@@ -76,6 +76,7 @@ def index():
                     else:
                         flash("You have successfully logged in!")
                         session['user_id'] = found[0]['id']
+                        session['user_name'] = found[0]['name']
                         return redirect('/wall')
     else:
         return render_template('index.html')
@@ -83,19 +84,34 @@ def index():
 @app.route('/wall', methods=['POST', 'GET'])
 def wall():
     if request.method == 'POST':
-        message = request.form['message']
-        insert_query = "INSERT INTO messages (user_id, message, created_at, updated_at) VALUES (:user_id, :message, NOW(), NOW())"
-        data = {
-         'user_id': session['user_id'],
-         'message': message
-         }
-        mysql.query_db(insert_query, data)
-        return redirect('/wall')
+        form = request.form['purpose']
+        if form == 'message':
+            message = request.form['message']
+            insert_query = "INSERT INTO messages (user_id, message, created_at, updated_at) VALUES (:user_id, :message, NOW(), NOW())"
+            data = {
+             'user_id': session['user_id'],
+             'message': message
+             }
+            mysql.query_db(insert_query, data)
+            return redirect('/wall')
+        else:
+            comment = request.form['comment']
+            message = request.form['purpose']
+            insert_query = "INSERT INTO comments (user_id, message_id, comment, created_at, updated_at) VALUES (:user_id, :message_id, :comment, NOW(), NOW())"
+            data = {
+             'user_id': session['user_id'],
+             'message_id': message,
+             'comment': comment
+             }
+            mysql.query_db(insert_query, data)
+            return redirect('/wall')
     else:
         if 'user_id' in session:
-            select_query = "SELECT CONCAT(users.first_name, users.last_name) AS name, messages.created_at AS date_posted, messages.message AS message FROM users JOIN messages WHERE users.id = messages.user_id"
-            messages = mysql.query_db(select_query)
-            return render_template('wall.html', messages=messages)
+            select_query_messages = "SELECT messages.id AS id, CONCAT(users.first_name, ' ', users.last_name) AS name, messages.created_at AS date_posted, messages.message AS message FROM users JOIN messages ON users.id = messages.user_id"
+            messages = mysql.query_db(select_query_messages)
+            select_query_comments = "SELECT messages.id AS message_id, CONCAT(users.first_name, ' ', users.last_name) AS name, comments.created_at AS date_posted, comments.comment AS comment FROM users JOIN comments ON users.id = comments.user_id JOIN messages ON messages.id = comments.message_id"
+            comments = mysql.query_db(select_query_comments)
+            return render_template('wall.html', messages=messages, comments=comments)
         else:
             return redirect('/')
 #flash("Success! Your name is {}".format(request.form['name']))

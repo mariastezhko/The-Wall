@@ -1,34 +1,52 @@
 <html>
 <head>
-  <title>Emails</title>
-
+  <title>Forum</title>
+  <link rel='stylesheet' type='text/css' href='{{ url_for('static', filename='css/style.css') }}'>
 </head>
 <body>
 
-  <form action='/log_off' method='post'>
-  <button type="submit" value="Log Off">Log Off</button>
-  </form>
+  <div id="wrapper">
+    <div id="header">
+      <h2>CodingDojo Wall</h2>
+      <span>Welcome {{ session['user_name'] }}!</span>
+      <form action='/log_off' method='post'>
+      <button type="submit" value="Log Off">Log Off</button>
+      </form>
+    </div>
+    <div id="container">
 
-  {% with messages = get_flashed_messages() %}
-    {% if messages %}
-      {% for message in messages %}
-        <p>{{message}}</p>
+      <h3>Post a message</h3>
+
+      <form action='/wall' method='post'>
+      <input type="hidden" name="purpose" value="message">
+      <textarea name="message" rows="4" cols="150"></textarea>
+      <input type="submit" value="Post a message">
+      </form>
+
+      {% for message in messages: %}
+        <p class="author">{{ message['name'] }}-{{ message['date_posted'] }}</p>
+        <p>{{ message['message'] }}</p>
+        <div class="comments">
+            {% for comment in comments: %}
+
+              {% if comment['message_id'] == message['id'] %}
+                <p class="author">{{ comment['name'] }}-{{ comment['date_posted'] }}</p>
+                <p>{{ comment['comment'] }}</p>
+              {% endif %}
+
+            {% endfor %}
+
+            <h4>Post a comment</h4>
+
+            <form action='/wall' method='post'>
+            <input type="hidden" name="purpose" value="{{ message['id'] }}" >
+            <textarea name="comment" rows="4" cols="130"></textarea>
+            <input type="submit" value="Post a comment">
+            </form>
+        </div>
       {% endfor %}
-    {% endif %}
-  {% endwith %}
-
-  <h3>Post a message</h3>
-
-  <form action='/wall' method='post'>
-  <textarea name="message" rows="4" cols="100"></textarea>
-  <input type="submit" value="Post a message">
-  </form>
-
-  {% for message in messages: %}
-    <p>{{ message['name'] }}{{ message['date_posted'] }}</p>
-    <p>{{ message['message'] }}
-  {% endfor %}
-
+     </div>
+    </div>
 
 </body>
 </html>
